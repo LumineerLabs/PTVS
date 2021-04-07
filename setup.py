@@ -1,16 +1,16 @@
 # PyKinect
 # Copyright(c) Microsoft Corporation
 # All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the License); you may not use
 # this file except in compliance with the License. You may obtain a copy of the
 # License at http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 # OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 # IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
 # MERCHANTABLITY OR NON-INFRINGEMENT.
-# 
+#
 # See the Apache Version 2.0 License for specific language governing
 # permissions and limitations under the License.
 
@@ -70,7 +70,7 @@ class pykinect_build_ext(build_ext):
     def initialize_options(self):
         build_ext.initialize_options(self)
         self.inplace = 1
-    
+
     def get_ext_filename(self, ext_name):
         return build_ext.get_ext_filename(self, ext_name).replace(get_config_var('SO'), '.dll')
 
@@ -79,10 +79,10 @@ class pykinect_build_ext(build_ext):
 
     def get_source_files(self):
         filenames = build_ext.get_source_files(self)
-        
+
         for ext in self.extensions:
             filenames.extend(getattr(ext, 'headers', []))
-        
+
         return filenames
 
 kinectsdk_dir = os.environ.get('KINECTSDK10_DIR', '')
@@ -94,9 +94,9 @@ else:
 
 pykinectaudio_ext = Extension(
     'pykinect.audio.PyKinectAudio',
-    include_dirs=filter(None, ['src', kinectsdk_inc]),
+    include_dirs=list(filter(None, ['src', kinectsdk_inc])),
     libraries=['Msdmo', 'dmoguids', 'mf', 'mfuuid', 'mfplat', 'avrt', 'Kinect10'],
-    library_dirs=filter(None, [kinectsdk_lib]),
+    library_dirs=list(filter(None, [kinectsdk_lib])),
     sources=[
         'src\\stdafx.cpp',
         'src\\PyKinectAudio.cpp',
