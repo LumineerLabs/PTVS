@@ -1,16 +1,16 @@
 # PyKinect
 # Copyright(c) Microsoft Corporation
 # All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the License); you may not use
 # this file except in compliance with the License. You may obtain a copy of the
 # License at http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 # OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 # IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
 # MERCHANTABLITY OR NON-INFRINGEMENT.
-# 
+#
 # See the Apache Version 2.0 License for specific language governing
 # permissions and limitations under the License.
 
@@ -27,11 +27,11 @@ class _EnumerationType(type(ctypes.c_int)):
 
     def __new__(metacls, name, bases, dict):
         cls = type(ctypes.c_int).__new__(metacls, name, bases, dict)
-        for key, value in cls.__dict__.items():                        
+        for key, value in cls.__dict__.items():
             if key.startswith('_') and key.endswith('_'): continue
-            
+
             setattr(cls, key, cls(key, value))
-        
+
         return cls
 
 
@@ -40,18 +40,18 @@ class _Enumeration(ctypes.c_int):
 
     __metaclass__ = _EnumerationType
     def __init__(self, name, value):
-        self.name = name        
+        self.name = name
         ctypes.c_int.__init__(self, value)
-      
+
     def __hash__(self):
         return self.value
 
     def __int__(self):
         return self.value
-    
+
     def __index__(self):
         return self.value
-      
+
     def __repr__(self):
         if hasattr(self, 'name'):
             return "<%s.%s (%r)>" % (self.__class__.__name__, self.name, self.value)
@@ -69,7 +69,7 @@ class _Enumeration(ctypes.c_int):
     def __eq__(self, other):
         if type(self) is not type(other):
             return self.value == other
-            
+
         return self.value == other.value
 
     def __ne__(self, other):
@@ -98,7 +98,7 @@ class Vector(ctypes.Structure):
                self.y == other.y and
                self.z == other.z and
                self.w == other.w)
- 
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -110,8 +110,8 @@ class Matrix4(Array):
     """4x4 matrix.  Can be accessed using matrix[0,0] ... matrix[3,3] or can be accessed using
        matrix.M11 ... matrix.M44 for similarity to .NET and the C data structures.  matrix[0,1] is
        the same as matrix.M12.
-    
-        Used to provide bone rotation information.   
+
+        Used to provide bone rotation information.
     """
 
     _length_ = 16
@@ -189,11 +189,11 @@ class Matrix4(Array):
 
 
 class _NuiLockedRect(ctypes.Structure):
-    _fields_ = [('pitch', ctypes.c_int32), 
+    _fields_ = [('pitch', ctypes.c_int32),
                 ('size', ctypes.c_int32),
                 ('bits', ctypes.c_voidp)]
 
-     
+
 class _NuiSurfaceDesc(ctypes.Structure):
     _fields_ = [('width', ctypes.c_uint32),
                 ('height', ctypes.c_uint32)
@@ -212,13 +212,13 @@ class PlanarImage(ctypes.c_voidp):
         desc = _NuiSurfaceDesc()
         PlanarImage._GetLevelDesc(self, 0, ctypes.byref(desc))
         return desc.width
-    
+
     @property
     def height(self):
         desc = _NuiSurfaceDesc()
         PlanarImage._GetLevelDesc(self, 0, ctypes.byref(desc))
         return desc.height
-        
+
     @property
     def bytes_per_pixel(self):
         return self.pitch / self.width
@@ -232,7 +232,7 @@ class PlanarImage(ctypes.c_voidp):
     def copy_bits(self, dest):
         """copies the bits of the image to the provided destination address"""
         desc = _NuiSurfaceDesc()
-        
+
         PlanarImage._GetLevelDesc(self, 0, ctypes.byref(desc))
 
         rect = _NuiLockedRect()
@@ -265,7 +265,7 @@ class ImageType(_Enumeration):
 class ImageResolution(_Enumeration):
     """Specifies image resolution."""
     invalid = Invalid = -1
-    resolution_80x60 = Resolution80x60 = 0 
+    resolution_80x60 = Resolution80x60 = 0
     resolution_320x240 = Resolution320x240 = 1
     resolution_640x480 = Resolution640x480 = 2
     resolution_1280x1024 = Resolution1280x1024 = 3                      # for hires color only
@@ -286,9 +286,9 @@ class ImageDigitalZoom(_Enumeration):
 
 class ImageViewArea(ctypes.Structure):
     """Specifies the image view area. """
-    _fields_ = [('Zoom', ctypes.c_int),     # An ImageDigitalZoom value that specifies the zoom factor. 
-                ('CenterX', ctypes.c_long), # The horizontal offset from center, for panning. 
-                ('CenterY', ctypes.c_long)  # The vertical offset from center, for panning. 
+    _fields_ = [('Zoom', ctypes.c_int),     # An ImageDigitalZoom value that specifies the zoom factor.
+                ('CenterX', ctypes.c_long), # The horizontal offset from center, for panning.
+                ('CenterY', ctypes.c_long)  # The vertical offset from center, for panning.
                ]
 
     def get_zoom(self):
@@ -338,13 +338,13 @@ class JointId(_Enumeration):
     wrist_left = WristLeft = 6
     hand_left = HandLeft = 7
     shoulder_right = ShoulderRight = 8
-    elbow_right = ElbowRight = 9 
+    elbow_right = ElbowRight = 9
     wrist_right = WristRight = 10
     hand_right = HandRight = 11
     hip_left = HipLeft = 12
     knee_left = KneeLeft = 13
     ankle_left = AnkleLeft = 14
-    foot_left = FootLeft = 15 
+    foot_left = FootLeft = 15
     hip_right = HipRight = 16
     knee_right = KneeRight = 17
     ankle_right = AnkleRight = 18
@@ -352,14 +352,14 @@ class JointId(_Enumeration):
     count = Count = 20
 
 class SkeletonBoneRotation(ctypes.Structure):
-    _fields_ = [('rotation_matrix', Matrix4), 
+    _fields_ = [('rotation_matrix', Matrix4),
                 ('rotation_quaternion', Vector)]
 
     def __repr__(self):
         return '<SkeletonBoneRotation(%r, %r)>' % (self.rotation_matrix, self.rotation_quaternion)
 
 class SkeletonBoneOrientation(ctypes.Structure):
-    _fields_ = [('end_joint', JointId), 
+    _fields_ = [('end_joint', JointId),
                 ('start_joint', JointId),
                 ('hierarchical_rotation', SkeletonBoneRotation),
                 ('absolute_rotation', SkeletonBoneRotation),
@@ -397,7 +397,7 @@ class SkeletonQuality(_Enumeration):
     clipped_top = ClippedTop    = 0x00000004
     clipped_bottom = ClippedBottom = 0x00000008
 
-NUI_SKELETON_POSITION_COUNT = JointId.Count.value
+NUI_SKELETON_POSITION_COUNT = JointId.Count
 
 class SkeletonData(ctypes.Structure):
     """Contains data that characterizes a skeleton."""
@@ -465,9 +465,9 @@ class SkeletonData(ctypes.Structure):
     def set_skeleton_position_tracking_states(self, value):
         self.eSkeletonPositionTrackingState = value
 
-    skeleton_position_tracking_states = property(get_skeleton_position_tracking_states, 
+    skeleton_position_tracking_states = property(get_skeleton_position_tracking_states,
                                                 set_skeleton_position_tracking_states)
-        
+
     def get_skeleton_quality(self):
         return self.Quality
 
@@ -491,8 +491,8 @@ class SkeletonData(ctypes.Structure):
         return tuple(arr)
 
     def __repr__(self):
-        return '<Tracking: %r, ID: %r, Position: %r>' % (self.eTrackingState, 
-                                                            self.dwTrackingID, 
+        return '<Tracking: %r, ID: %r, Position: %r>' % (self.eTrackingState,
+                                                            self.dwTrackingID,
                                                             self.Position)
     def __eq__(self, other):
         if (self.tracking_state == other.tracking_state and
@@ -503,9 +503,9 @@ class SkeletonData(ctypes.Structure):
                 self.skeleton_quality == other.skeleton_quality):
 
             for i in range(len(self.skeleton_positions)):
-                if (self.skeleton_positions[i] != other.skeleton_positions[i] or 
+                if (self.skeleton_positions[i] != other.skeleton_positions[i] or
                     self.skeleton_position_tracking_states[i] != other.skeleton_position_tracking_states[i]):
-                    return False                 
+                    return False
 
             return True
 
@@ -534,50 +534,50 @@ class SkeletonFrame(ctypes.Structure):
 
     def get_timestamp(self):
         return self.liTimeStamp
-    
+
     def set_timestamp(self, value):
         self.liTimeStamp = value
-    
+
     timestamp = property(get_timestamp, set_timestamp)
 
     def get_frame_number(self):
         return self.dwFrameNumber
-    
+
     def set_frame_number(self, value):
         self.dwFrameNumber = value
-    
+
     frame_number = property(get_frame_number, set_frame_number)
 
     def get_quality(self):
         return self.Quality
-    
+
     def set_quality(self, value):
         self.Quality = value
-    
+
     quality = property(get_quality, set_quality)
 
     def get_floor_clip_plane(self):
         return self.vFloorClipPlane
-    
+
     def set_floor_clip_plane(self, value):
         self.vFloorClipPlane = value
-    
+
     floor_clip_plane = property(get_floor_clip_plane, set_floor_clip_plane)
 
     def get_normal_to_gravity(self):
         return self.vNormalToGravity
-    
+
     def set_normal_to_gravity(self, value):
         self.vNormalToGravity = value
-    
+
     normal_to_gravity = property(get_normal_to_gravity, set_normal_to_gravity)
 
     def get_skeleton_data(self):
         return self.SkeletonData
-    
+
     def set_skeleton_data(self, value):
         self.SkeletonData = value
-    
+
     skeleton_data = property(get_skeleton_data, set_skeleton_data)
 
 
@@ -592,40 +592,40 @@ class TransformSmoothParameters(ctypes.Structure):
 
     def get_smoothing(self):
         return self.fSmoothing
-    
+
     def set_smoothing(self, value):
         self.fSmoothing = value
-    
+
     smoothing = property(get_smoothing, set_smoothing)
 
     def get_correction(self):
         return self.fCorrection
-    
+
     def set_correction(self, value):
         self.fCorrection = value
-    
+
     correction = property(get_correction, set_correction)
 
     def get_prediction(self):
         return self.fPrediction
-    
+
     def set_prediction(self, value):
         self.fPrediction = value
-    
+
     prediction = property(get_prediction, set_prediction)
 
     def get_jitter_radius(self):
         return self.fJitterRadius
-    
+
     def set_jitter_radius(self, value):
         self.fJitterRadius = value
-    
+
     jitter_radius = property(get_jitter_radius, set_jitter_radius)
 
     def get_max_deviation_radius(self):
         return self.fMaxDeviationRadius
-    
+
     def set_max_deviation_radius(self, value):
         self.fMaxDeviationRadius = value
-    
+
     max_deviation_radius = property(get_max_deviation_radius, set_max_deviation_radius)

@@ -1,16 +1,16 @@
 # PyKinect
 # Copyright(c) Microsoft Corporation
 # All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the License); you may not use
 # this file except in compliance with the License. You may obtain a copy of the
 # License at http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 # OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 # IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
 # MERCHANTABLITY OR NON-INFRINGEMENT.
-# 
+#
 # See the Apache Version 2.0 License for specific language governing
 # permissions and limitations under the License.
 
@@ -18,8 +18,8 @@
 
 import ctypes
 from pykinect.nui import KinectError, _NUIDLL
-from pykinect.nui.structs import (ImageFrame, ImageResolution, ImageType, 
-                                  ImageViewArea,  SkeletonFrame, 
+from pykinect.nui.structs import (ImageFrame, ImageResolution, ImageType,
+                                  ImageViewArea,  SkeletonFrame,
                                   TransformSmoothParameters, _Enumeration)
 
 _SEVERITY_ERROR = 1
@@ -35,7 +35,7 @@ class _KinectHRESULT(ctypes._SimpleCData):
             error_msg = _KINECT_ERRORS.get(error, '')
             if error_msg is not None:
                 err.strerror = err.message = error_msg
-        
+
             raise err
 
 def _HRESULT_FROM_WIN32(error):
@@ -109,11 +109,11 @@ _CloseHandle = _kernel32.CloseHandle
 _CloseHandle.argtypes = [ctypes.c_voidp]
 _CloseHandle.restype = c_bool
 
-_WaitForSingleObject = _kernel32.WaitForSingleObject 
+_WaitForSingleObject = _kernel32.WaitForSingleObject
 _WaitForSingleObject.argtypes = [ctypes.c_voidp, ctypes.c_uint32]
 _WaitForSingleObject.restype = ctypes.c_uint32
 
-_WaitForMultipleObjects = _kernel32.WaitForMultipleObjects 
+_WaitForMultipleObjects = _kernel32.WaitForMultipleObjects
 _WaitForMultipleObjects.argtypes = [ctypes.c_uint32, ctypes.POINTER(ctypes.c_voidp), ctypes.c_uint, ctypes.c_uint32]
 _WaitForMultipleObjects.restype = ctypes.c_uint32
 
@@ -140,13 +140,13 @@ class _NuiInstance(ctypes.c_voidp):
     _NuiImageStreamGetImageFrameFlags = 8
     _NuiImageStreamGetNextFrame = ctypes.WINFUNCTYPE(ctypes.HRESULT, ctypes.c_voidp, ctypes.c_uint32, ctypes.POINTER(ImageFrame))(9, 'NuiImageStreamGetNextFrame')
     _NuiImageStreamReleaseFrame = ctypes.WINFUNCTYPE(ctypes.HRESULT, ctypes.c_voidp, ctypes.POINTER(ImageFrame))(10, 'NuiImageStreamReleaseFrame')
-    _NuiImageGetColorPixelCoordinatesFromDepthPixel = ctypes.WINFUNCTYPE(ctypes.HRESULT, 
-        ImageResolution, 
-        ctypes.POINTER(ImageViewArea), 
-        ctypes.c_long, 
-        ctypes.c_long, 
-        ctypes.c_uint16, 
-        ctypes.POINTER(ctypes.c_long), 
+    _NuiImageGetColorPixelCoordinatesFromDepthPixel = ctypes.WINFUNCTYPE(ctypes.HRESULT,
+        ImageResolution,
+        ctypes.POINTER(ImageViewArea),
+        ctypes.c_long,
+        ctypes.c_long,
+        ctypes.c_uint16,
+        ctypes.POINTER(ctypes.c_long),
         ctypes.POINTER(ctypes.c_long))(11, 'NuiImageGetColorPixelCoordinatesFromDepthPixel')
     _NuiImageGetColorPixelCoordinatesFromDepthPixelAtResolution = 12
     _NuiImageGetColorPixelCoordinateFrameFromDepthPixelFrameAtResolution = 13
@@ -167,7 +167,7 @@ class _NuiInstance(ctypes.c_voidp):
 
     def InstanceIndex(self):
         """which instance # was it created with, in MSR_NuiCreateInstanceByIndex( )/etc?"""
-        print self.value
+        print(self.value)
         return _NuiInstance._InstanceIndex(self)
 
     def NuiInitialize(self, dwFlags = 0):
@@ -175,7 +175,7 @@ class _NuiInstance(ctypes.c_voidp):
 
     def NuiShutdown(self):
         return _NuiInstance._NuiShutdown(self)
-        
+
     def NuiImageStreamOpen(self, eImageType, eResolution, dwImageFrameFlags_NotUsed, dwFrameLimit, hNextFrameEvent = 0):
         res = ctypes.c_voidp()
         _NuiInstance._NuiImageStreamOpen(self, eImageType, eResolution, dwImageFrameFlags_NotUsed, dwFrameLimit, hNextFrameEvent, ctypes.byref(res))
@@ -229,7 +229,7 @@ class _NuiInstance(ctypes.c_voidp):
     def NuiTransformSmooth(self, pSkeletonFrame, pSmoothingParams):
         _NuiInstance._NuiTransformSmooth(self, pSkeletonFrame, pSmoothingParams)
 
-    def GetUniqueDeviceName(self):        
+    def GetUniqueDeviceName(self):
         mem = ctypes.c_voidp()
         # Size is currently not used, and when we get the unique device name we need to free the memory.
 
@@ -254,7 +254,7 @@ def _NuiGetSensorCount():
     count = ctypes.c_int()
     __NuiGetSensorCount(ctypes.byref(count))
     return count.value
-    
+
 __NuiCreateSensorByIndex = _NUIDLL.NuiCreateSensorByIndex
 __NuiCreateSensorByIndex.argtypes = [ctypes.c_int, ctypes.POINTER(_NuiInstance)]
 __NuiCreateSensorByIndex.restype = ctypes.HRESULT

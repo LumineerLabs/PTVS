@@ -1,22 +1,22 @@
 # PyKinect
 # Copyright(c) Microsoft Corporation
 # All rights reserved.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the License); you may not use
 # this file except in compliance with the License. You may obtain a copy of the
 # License at http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
 # OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
 # IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
 # MERCHANTABLITY OR NON-INFRINGEMENT.
-# 
+#
 # See the Apache Version 2.0 License for specific language governing
 # permissions and limitations under the License.
 
 import ctypes
 import os
-import thread
+import _thread
 
 # basic initialization, Python specific infrastructure
 _nuidll_path = os.path.join(os.environ['WINDIR'], 'System32', 'Kinect10.dll')
@@ -26,17 +26,17 @@ class KinectError(WindowsError):
     """Represents an error from a Kinect sensor"""
     pass
 
-from pykinect.nui.structs import (ImageDigitalZoom, ImageFrame, ImageResolution, 
-                                  ImageType, ImageViewArea, JointId, 
-                                  JointTrackingState, PlanarImage, SkeletonData, 
-                                  SkeletonFrame, SkeletonFrameQuality, 
-                                  SkeletonQuality, SkeletonTrackingState, 
+from pykinect.nui.structs import (ImageDigitalZoom, ImageFrame, ImageResolution,
+                                  ImageType, ImageViewArea, JointId,
+                                  JointTrackingState, PlanarImage, SkeletonData,
+                                  SkeletonFrame, SkeletonFrameQuality,
+                                  SkeletonQuality, SkeletonTrackingState,
                                   TransformSmoothParameters, Vector, _Enumeration)
 
-from _interop import (_CreateEvent, _CloseHandle, _WaitForSingleObject, 
-                      _WaitForMultipleObjects, _WAIT_OBJECT_0, _INFINITE, 
-                      _SysFreeString, _NuiInstance, _NuiCreateSensorByIndex, 
-                      _NuiGetSensorCount)
+from pykinect.nui._interop import (_CreateEvent, _CloseHandle, _WaitForSingleObject,
+                                   _WaitForMultipleObjects, _WAIT_OBJECT_0, _INFINITE,
+                                   _SysFreeString, _NuiInstance, _NuiCreateSensorByIndex,
+                                   _NuiGetSensorCount)
 
 
 _NUI_IMAGE_PLAYER_INDEX_SHIFT      =    3
@@ -72,7 +72,7 @@ _NUI_SKELETON_INVALID_TRACKING_ID = 0
 # x_meters = (x_pixelcoord - 160) * NUI_CAMERA_DEPTH_IMAGE_TO_SKELETON_MULTIPLIER_320x240 * z_meters;
 # y_meters = (y_pixelcoord - 120) * NUI_CAMERA_DEPTH_IMAGE_TO_SKELETON_MULTIPLIER_320x240 * z_meters;
 _NUI_CAMERA_DEPTH_IMAGE_TO_SKELETON_MULTIPLIER_320x240 = _NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS
- 
+
 # Assuming a pixel resolution of 320x240
 # x_pixelcoord = (x_meters) * NUI_CAMERA_SKELETON_TO_DEPTH_IMAGE_MULTIPLIER_320x240 / z_meters + 160;
 # y_pixelcoord = (y_meters) * NUI_CAMERA_SKELETON_TO_DEPTH_IMAGE_MULTIPLIER_320x240 / z_meters + 120;
@@ -98,7 +98,7 @@ class Device(object):
         if Device._device_inst is None:
             Device._device_inst = object.__new__(Device)
         return Device._device_inst
-        
+
     @property
     def count(self):
         """The number of active Kinect sensors that are attached to the system."""
@@ -108,19 +108,19 @@ class Device(object):
 class Runtime(object):
     """Represents a Kinect sensor."""
 
-    def __init__(self, 
-                 nui_init_flags = RuntimeOptions.uses_color| RuntimeOptions.uses_depth | RuntimeOptions.uses_depth_and_player_index | RuntimeOptions.uses_skeletal_tracking,                 
+    def __init__(self,
+                 nui_init_flags = RuntimeOptions.uses_color| RuntimeOptions.uses_depth | RuntimeOptions.uses_depth_and_player_index | RuntimeOptions.uses_skeletal_tracking,
                  index = 0):
         """Creates a new runtime.  By default initialized to the 1st installed kinect device and tracking all events"""
         self._nui = self._skeleton_event = self._image_event = self._depth_event = None
         self._nui = _NuiCreateSensorByIndex(index)
-        try:            
+        try:
             self._nui.NuiInitialize(nui_init_flags)
         except:
             self._nui.NuiShutdown()
             import traceback
-            
-            raise KinectError('Unable to create Kinect runtime %s' % (traceback.format_exc())) 
+
+            raise KinectError('Unable to create Kinect runtime %s' % (traceback.format_exc()))
 
         self.depth_frame_ready = _event()
         self.skeleton_frame_ready = _event()
@@ -129,28 +129,28 @@ class Runtime(object):
         self._skeleton_event = _CreateEvent(None, True, False, None)
         self._image_event = _CreateEvent(None, True, False, None)
         self._depth_event = _CreateEvent(None, True, False, None)
-        
+
         self.camera = Camera(self)
         self.skeleton_engine = SkeletonEngine(self)
         self.depth_stream = ImageStream(self)
         self.video_stream = ImageStream(self)
-        
-        thread.start_new_thread(self._event_thread, ())
+
+        _thread.start_new_thread(self._event_thread, ())
 
     def close(self):
         """closes the current runtime"""
         if self._nui is not None:
             self._nui.NuiShutdown()
             self._nui = None
-        
+
         if self._skeleton_event is not None:
             _CloseHandle(self._skeleton_event)
             self._skeleton_event = None
-        
+
         if self._image_event is not None:
             _CloseHandle(self._image_event)
             self._image_event = None
-        
+
         if self._depth_event is not None:
             _CloseHandle(self._depth_event)
             self._depth_event = None
@@ -161,7 +161,7 @@ class Runtime(object):
 
     def __del__(self):
         self.close()
-    
+
     def __enter__(self):
         return self
 
@@ -181,15 +181,15 @@ class Runtime(object):
         handles[0] = self._skeleton_event
         handles[1] = self._depth_event
         handles[2] = self._image_event
-        while 1:    
+        while 1:
             wait = _WaitForMultipleObjects(3, handles, False, _INFINITE)
             if wait == 0:
-                # skeleton data                
+                # skeleton data
                 try:
                     frame = self._nui.NuiSkeletonGetNextFrame(0)
                 except KinectError:
                     continue
-        
+
                 for curSkeleton in frame.SkeletonData:
                     if curSkeleton.eTrackingState != SkeletonTrackingState.NOT_TRACKED:
                         self.skeleton_frame_ready.fire(frame)
@@ -197,12 +197,12 @@ class Runtime(object):
             elif wait == 1:
                 # depth event
                 depth_frame = self._nui.NuiImageStreamGetNextFrame(self.depth_stream._stream, 0)
-                self.depth_frame_ready.fire(depth_frame)                
+                self.depth_frame_ready.fire(depth_frame)
                 self._nui.NuiImageStreamReleaseFrame(self.depth_stream._stream, depth_frame)
             elif wait == 2:
                 # image event
                 depth_frame = self._nui.NuiImageStreamGetNextFrame(self.video_stream._stream, 0)
-                self.video_frame_ready.fire(depth_frame)     
+                self.video_frame_ready.fire(depth_frame)
                 self._nui.NuiImageStreamReleaseFrame(self.video_stream._stream, depth_frame)
                 pass
             else:
@@ -253,13 +253,13 @@ class ImageStream(object):
 
         self._stream = self.runtime._nui.NuiImageStreamOpen(image_type, resolution, 0, frame_limit, event_handle)
         self.stream_type = image_stream_type
-        self.resolution = resolution        
+        self.resolution = resolution
         self.type = image_type
 
     def get_next_frame(self, milliseconds_to_wait = 0):
         # TODO: Allow user to provide a NUI_IMAGE_FRAME ?
         return self.runtime._nui.NuiImageStreamGetNextFrame(self._stream, milliseconds_to_wait)
-    
+
     @staticmethod
     def get_valid_resolutions(image_type):
         if image_type == ImageType.Color:
@@ -276,7 +276,7 @@ class ImageStream(object):
             raise KinectError("Unknown image_type: %r" % (image_type, ))
 
 
-class SkeletonEngine(object):    
+class SkeletonEngine(object):
     """Represents the skeleton tracking engine. """
 
     def __init__(self, runtime):
@@ -309,23 +309,23 @@ class SkeletonEngine(object):
         ##  Depth is in meters in skeleton space.
         ##  The depth image pixel format has depth in millimeters shifted left by 3.
         ##
-    
+
         fSkeletonZ = (usDepthValue >> 3) / 1000.0
-    
+
         ##
         ## Center of depth sensor is at (0,0,0) in skeleton space, and
         ## and (160,120) in depth image coordinates.  Note that positive Y
         ## is up in skeleton space and down in image coordinates.
         ##
-    
+
         fSkeletonX = (fDepthX - 0.5) * (_NUI_CAMERA_DEPTH_IMAGE_TO_SKELETON_MULTIPLIER_320x240 * fSkeletonZ) * 320.0
         fSkeletonY = (0.5 - fDepthY) * (_NUI_CAMERA_DEPTH_IMAGE_TO_SKELETON_MULTIPLIER_320x240 * fSkeletonZ) * 240.0
-    
+
         ##
         ## Return the result as a vector.
         ##
-        
-        v4 = Vector()    
+
+        v4 = Vector()
         v4.x = fSkeletonX
         v4.y = fSkeletonY
         v4.z = fSkeletonZ
@@ -336,16 +336,16 @@ class SkeletonEngine(object):
     def skeleton_to_depth_image(vPoint, scaleX = 1, scaleY = 1):
         """Given a Vector4 returns X and Y coordinates fo display on the screen.  Returns a tuple depthX, depthY"""
 
-        if vPoint.z > _FLT_EPSILON: 
+        if vPoint.z > _FLT_EPSILON:
            ##
            ## Center of depth sensor is at (0,0,0) in skeleton space, and
            ## and (160,120) in depth image coordinates.  Note that positive Y
            ## is up in skeleton space and down in image coordinates.
            ##
-       
+
            pfDepthX = 0.5 + vPoint.x * ( _NUI_CAMERA_SKELETON_TO_DEPTH_IMAGE_MULTIPLIER_320x240 / vPoint.z ) / 320.0
            pfDepthY = 0.5 - vPoint.y * ( _NUI_CAMERA_SKELETON_TO_DEPTH_IMAGE_MULTIPLIER_320x240 / vPoint.z ) / 240.0
-       
+
            return pfDepthX * scaleX, pfDepthY * scaleY
 
         return 0.0, 0.0
@@ -378,7 +378,7 @@ class Camera(object):
         return self.runtime._nui.GetUniqueDeviceName()
 
     def get_color_pixel_coordinates_from_depth_pixel(self, color_resolution, view_area, depth_x, depth_y, depth_value):
-        """Returns the pixel coordinates in color image space that correspond to the specified pixel coordinates in depth image space. 
+        """Returns the pixel coordinates in color image space that correspond to the specified pixel coordinates in depth image space.
 
 color_resolution: An ImageResolution value specifying the color image resolution.
 view_area: An ImageViewArea structure containing the pan and zoom settings. If you provide this argument, you should pass in the view area from the image frame against which you are registering pixels, rather than manually instantiating and populating the structure. This helps ensure that your settings are valid.
@@ -389,12 +389,12 @@ depth_value The depth value in depth image space.
 Returns: color_x, color_y - the x and y coordinate in the color image space
 """
         return self.runtime._nui.NuiImageGetColorPixelCoordinatesFromDepthPixel(
-            color_resolution, 
-            view_area, 
-            depth_x, 
-            depth_y, 
+            color_resolution,
+            view_area,
+            depth_x,
+            depth_y,
             depth_value)
-        
+
 
 def TransformSmoothParameters(vPoint):
     """returns depthX (float), depthY (float), depthValue (int)"""
@@ -405,15 +405,15 @@ def TransformSmoothParameters(vPoint):
        # and (160,120) in depth image coordinates.  Note that positive Y
        # is up in skeleton space and down in image coordinates.
        #
-       
+
        pfDepthX = 0.5 + vPoint.vector.x * _NUI_CAMERA_SKELETON_TO_DEPTH_IMAGE_MULTIPLIER_320x240 / ( vPoint.vector.z * 320.0 )
        pfDepthY = 0.5 - vPoint.vector.y * _NUI_CAMERA_SKELETON_TO_DEPTH_IMAGE_MULTIPLIER_320x240 / ( vPoint.vector.z * 240.0 )
-       
+
        #
        #  Depth is in meters in skeleton space.
        #  The depth image pixel format has depth in millimeters shifted left by 3.
        #
-       
+
        pusDepthValue = int(vPoint.vector.z * 1000) << 3
        return pfDepthX, pfDepthY, pusDepthValue
 
@@ -423,14 +423,14 @@ def TransformSmoothParameters(vPoint):
 class _event(object):
     """class used for adding/removing/invoking a set of listener functions"""
     __slots__ = ['handlers']
-        
+
     def __init__(self):
         self.handlers = []
-    
+
     def __iadd__(self, other):
         self.handlers.append(other)
         return self
-        
+
     def __isub__(self, other):
         self.handlers.remove(other)
         return self
@@ -438,5 +438,3 @@ class _event(object):
     def fire(self, *args):
         for handler in self.handlers:
             handler(*args)
-
-
